@@ -12,6 +12,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install pinned NDK
         run: sdkmanager 'ndk;27.1.12297006'
       - name: Rebuild and verify unchanged API and aligned binaries
