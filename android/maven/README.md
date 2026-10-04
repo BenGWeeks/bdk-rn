@@ -10,6 +10,8 @@ Native source: https://github.com/bitcoindevkit/bdk-ffi/tree/599bd8ff06d366ae532
 (v0.30.0). Cargo dependencies come from that revision's unchanged `Cargo.lock`.
 Toolchain: Rust 1.77.2, Android NDK 27.1.12297006, Android API 21.
 Both maximum and common page-size linker flags are set to 16384; RELRO is checked.
+The matching NDK compiler runtime is explicitly linked, and `--no-undefined`
+rejects missing compiler helpers at build time (including x86_64 float128 helpers).
 
 Rebuild on Linux x86_64 with Rust/rustup, Python 3, git, curl and binutils:
 

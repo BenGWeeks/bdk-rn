@@ -22,6 +22,10 @@ for spec in 'aarch64-linux-android:aarch64-linux-android21' 'x86_64-linux-androi
   clang=${spec#*:}
   key=${target//-/_}
   upper=${key^^}
+  # Rust's -nodefaultlibs can omit helpers used by NDK-compiled SQLite on x86_64.
+  # Link the matching NDK compiler runtime explicitly and reject unresolved symbols.
+  builtins=$($ndk_bin/$clang-clang --print-libgcc-file-name)
+  export RUSTFLAGS="-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384 -C link-arg=$builtins -C link-arg=-Wl,--no-undefined"
   (cd "$work/source" && env "CARGO_TARGET_${upper}_LINKER=$ndk_bin/$clang-clang" "CC_$key=$ndk_bin/$clang-clang" "AR_$key=$ndk_bin/llvm-ar" cargo +1.77.2 build --locked --lib --profile release-smaller --target "$target")
 done
 python3 "$root/scripts/package-android-16kb.py" "$work/original.aar" "$work/source/target" "$root/android/maven/org/bitcoindevkit/bdk-android/0.30.0-16kb.1/bdk-android-0.30.0-16kb.1.aar"
