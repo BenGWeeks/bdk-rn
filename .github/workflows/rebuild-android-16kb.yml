@@ -1,0 +1,20 @@
+name: Rebuild Android BDK for 16 KB pages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rebuild:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned NDK
+        run: sdkmanager 'ndk;27.1.12297006'
+      - name: Rebuild and verify unchanged API and aligned binaries
+        run: ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/27.1.12297006" bash scripts/rebuild-android-16kb.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bdk-android-0.30.0-16kb
+          path: android/maven/org/bitcoindevkit/bdk-android/0.30.0-16kb.1/*
