@@ -31,6 +31,18 @@ android {
     }
 }
 
+// The consuming app resolves transitive dependencies in its own repositories.
+// Register this narrow local repository for all projects, not just this bridge.
+def bdkMavenDirectory = file('maven')
+rootProject.allprojects {
+    repositories {
+        maven {
+            url bdkMavenDirectory
+            content { includeVersion 'org.bitcoindevkit', 'bdk-android', '0.30.0-16kb.1' }
+        }
+    }
+}
+
 repositories {
     google()
     mavenCentral()
@@ -41,5 +53,23 @@ dependencies {
     implementation 'com.facebook.react:react-native:+'
 
     // bitcoindevkit
-    implementation 'org.bitcoindevkit:bdk-android:0.30.0'
+    // Same 0.30.0 Kotlin API; native libraries rebuilt for 16 KB memory pages.
+    implementation 'org.bitcoindevkit:bdk-android:0.30.0-16kb.1'
+    // 5.17 fixes Android 16 KB loading for both arm64 and x86_64.
+    implementation 'net.java.dev.jna:jna:5.17.0@aar'
 }
+
+// Verify the vendored artifact before any Android build consumes it.
+def bdkAar = file('maven/org/bitcoindevkit/bdk-android/0.30.0-16kb.1/bdk-android-0.30.0-16kb.1.aar')
+def bdkChecksum = file("${bdkAar}.sha256")
+tasks.register('verifyBdkAndroidArtifact') {
+    inputs.files(bdkAar, bdkChecksum)
+    doLast {
+        def expected = bdkChecksum.text.trim().split(/\s+/)[0]
+        def actual = java.security.MessageDigest.getInstance('SHA-256').digest(bdkAar.bytes).encodeHex().toString()
+        if (actual != expected) {
+            throw new GradleException('BDK Android AAR checksum mismatch; restore the pinned dependency')
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn('verifyBdkAndroidArtifact') }
